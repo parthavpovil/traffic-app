@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../constants/colors.dart';
-import '../../widgets/common/app_logo.dart';
+import '../constants/colors.dart';
+import '../widgets/common/app_logo.dart';
 
-class LandingScreen extends StatelessWidget {
-  const LandingScreen({super.key});
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +51,28 @@ class LandingScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 48),
+            ElevatedButton(
+              onPressed: () {
+                // TODO: Implement wallet import functionality
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.darkBlue,
+                foregroundColor: AppColors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              child: const Text(
+                'Import Wallet',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),

@@ -10,18 +10,12 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColorFiltered(
-      colorFilter: const ColorFilter.mode(
-        Colors.transparent,
-        BlendMode.srcOver,
-      ),
-      child: Image.asset(
-        'assets/images/Traffix.png',
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-      ),
+    return Image.asset(
+      'assets/images/Traffix.png',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
     );
   }
 }
