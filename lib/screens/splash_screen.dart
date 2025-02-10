@@ -1,9 +1,49 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 import '../widgets/common/app_logo.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/wallet_service.dart';
+import '../widgets/dialogs/import_wallet_dialog.dart';
+import 'wallet_details_screen.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
+
+  Future<void> _handleWalletImport(BuildContext context) async {
+    final privateKey = await showDialog<String>(
+      context: context,
+      builder: (context) => const ImportWalletDialog(),
+    );
+
+    if (privateKey != null) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final walletService = WalletService(prefs);
+        final credentials = await walletService.importWallet(privateKey);
+
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WalletDetailsScreen(
+                credentials: credentials,
+                walletService: walletService,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +94,7 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 48),
             ElevatedButton(
-              onPressed: () {
-                // TODO: Implement wallet import functionality
-              },
+              onPressed: () => _handleWalletImport(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.darkBlue,
                 foregroundColor: AppColors.white,
