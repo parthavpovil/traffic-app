@@ -17,6 +17,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   File? _mediaFile;
   Position? _currentPosition;
   bool _isLoading = false;
+  bool _isVideo = false;
 
   @override
   void initState() {
@@ -42,19 +43,26 @@ class _CaptureScreenState extends State<CaptureScreen> {
     }
   }
 
-  Future<void> _captureMedia() async {
+  Future<void> _captureMedia(ImageSource source, bool isVideo) async {
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? media = await picker.pickImage(source: ImageSource.camera);
+      final XFile? media = isVideo
+          ? await picker.pickVideo(source: source)
+          : await picker.pickImage(source: source);
 
-      if (media != null) {
-        setState(() => _mediaFile = File(media.path));
+      if (media?.path != null) {
+        setState(() {
+          _mediaFile = File(media!.path);
+          _isVideo = isVideo;
+        });
         await _getCurrentLocation();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error capturing media')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error capturing media')),
+        );
+      }
     }
   }
 
@@ -72,32 +80,37 @@ class _CaptureScreenState extends State<CaptureScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (_mediaFile == null)
-              GestureDetector(
-                onTap: _captureMedia,
-                child: Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: AppColors.lightGray,
-                    borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: AppColors.darkBlue.withOpacity(0.3)),
-                  ),
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.camera_alt,
-                        size: 48,
-                        color: AppColors.darkBlue.withOpacity(0.7),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Tap to Take Photo',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.darkBlue.withOpacity(0.7),
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMediaButton(
+                              icon: Icons.camera_alt,
+                              label: 'Take Photo',
+                              onTap: () =>
+                                  _captureMedia(ImageSource.camera, false),
+                              color: AppColors.darkBlue,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildMediaButton(
+                              icon: Icons.videocam,
+                              label: 'Record Video',
+                              onTap: () =>
+                                  _captureMedia(ImageSource.camera, true),
+                              color: AppColors.orange,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -111,22 +124,40 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 elevation: 2,
                 child: Column(
                   children: [
-                    ClipRRect(
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(12)),
-                      child: Image.file(
-                        _mediaFile!,
+                    if (_isVideo)
+                      Container(
                         height: 200,
                         width: double.infinity,
-                        fit: BoxFit.cover,
+                        decoration: BoxDecoration(
+                          color: Colors.black87,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.video_file,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      )
+                    else
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
+                        child: Image.file(
+                          _mediaFile!,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
                     TextButton.icon(
                       onPressed: () => setState(() => _mediaFile = null),
                       icon: const Icon(Icons.refresh, color: AppColors.orange),
-                      label: const Text(
-                        'Retake Photo',
-                        style: TextStyle(color: AppColors.orange),
+                      label: Text(
+                        'Retake ${_isVideo ? 'Video' : 'Photo'}',
+                        style: const TextStyle(color: AppColors.orange),
                       ),
                     ),
                   ],
@@ -220,6 +251,27 @@ class _CaptureScreenState extends State<CaptureScreen> {
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: AppColors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
     );
