@@ -77,6 +77,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildProfileHeader(),
               const SizedBox(height: 24),
+              _buildTotalReports(),
+              const SizedBox(height: 24),
               _buildWalletCard(),
               const SizedBox(height: 24),
               _buildBalanceCard(),
@@ -90,53 +92,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader() {
-    return Column(
-      children: [
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: AppColors.orange.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.account_balance_wallet,
-            size: 40,
-            color: AppColors.orange,
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.darkBlue.withOpacity(0.2),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: CircleAvatar(
+          radius: 48,
+          backgroundColor: AppColors.orange.withOpacity(0.1),
+          child: Text(
+            '⟠', // Ethereum symbol
+            style: TextStyle(
+              fontSize: 48,
+              color: AppColors.orange,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
-        const SizedBox(height: 16),
-        const Text(
-          'Wallet Profile',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildWalletCard() {
     return Card(
-      elevation: 2,
+      elevation: 4,
+      shadowColor: AppColors.darkBlue.withOpacity(0.2),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.grey.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Wallet Address',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.darkBlue,
-              ),
+            Row(
+              children: [
+                Icon(Icons.wallet, color: AppColors.orange),
+                const SizedBox(width: 8),
+                const Text(
+                  'Wallet Address',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.darkBlue,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             FutureBuilder<EthereumAddress>(
               future: _address,
               builder: (context, snapshot) {
@@ -147,34 +167,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ClipboardData(text: snapshot.data!.hex));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                            content: Text('Address copied to clipboard')),
+                          content: Text('Address copied to clipboard'),
+                          backgroundColor: AppColors.darkBlue,
+                        ),
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.orange.withOpacity(0.3)),
                       ),
                       child: Row(
                         children: [
                           Expanded(
                             child: Text(
                               snapshot.data!.hex,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontFamily: 'monospace',
+                                color: AppColors.darkBlue.withOpacity(0.8),
                               ),
                             ),
                           ),
-                          const Icon(Icons.copy, color: AppColors.darkBlue),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child:
+                                const Icon(Icons.copy, color: AppColors.orange),
+                          ),
                         ],
                       ),
                     ),
                   );
                 }
-                return const LinearProgressIndicator();
+                return const LinearProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTotalReports() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Total Reports',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.darkBlue,
+              ),
+            ),
+            FutureBuilder<List<ReportData>>(
+              future: _reports,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${snapshot.data!.length}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.orange,
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+                  ),
+                );
               },
             ),
           ],
