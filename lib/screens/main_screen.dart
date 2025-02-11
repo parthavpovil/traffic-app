@@ -4,6 +4,7 @@ import '../constants/colors.dart';
 import '../services/wallet_service.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
+import 'capture_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final Credentials credentials;
@@ -41,7 +42,12 @@ class _MainScreenState extends State<MainScreen> {
       body: _screens[_selectedIndex],
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Implement action
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CaptureScreen(),
+            ),
+          );
         },
         backgroundColor: AppColors.orange,
         child: const Icon(Icons.add),
