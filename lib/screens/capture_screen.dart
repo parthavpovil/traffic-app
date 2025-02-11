@@ -105,10 +105,24 @@ class _CaptureScreenState extends State<CaptureScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report submitted successfully!')),
+        // Show success dialog
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success!'),
+            content: const Text(
+                'Your report has been successfully submitted to the blockchain.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Return to previous screen
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
-        Navigator.pop(context); // Return to previous screen
       }
     } catch (e) {
       if (mounted) {

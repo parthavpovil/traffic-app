@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/colors.dart';
 import '../services/wallet_service.dart';
+import '../services/contract_service.dart';
+import '../constants/contract_constants.dart';
 import 'package:web3dart/web3dart.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -21,12 +23,26 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<EthereumAddress> _address;
   Future<EtherAmount>? _balance;
+  late final ContractService _contractService;
+  Future<List<ReportData>>? _reports;
 
   @override
   void initState() {
     super.initState();
     _address = widget.credentials.extractAddress();
     _initBalance();
+    _contractService = ContractService(
+      rpcUrl: WalletService.sepoliaRpcUrl,
+      contractAddress: ContractConstants.contractAddress,
+      contractAbi: ContractConstants.abi,
+    );
+    _fetchReports();
+  }
+
+  Future<void> _fetchReports() async {
+    setState(() {
+      _reports = _contractService.getReportsByAddress(widget.credentials);
+    });
   }
 
   Future<void> _initBalance() async {
@@ -47,16 +63,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         foregroundColor: AppColors.white,
       ),
       body: RefreshIndicator(
-        onRefresh: _initBalance,
-        child: ListView(
+        onRefresh: () async {
+          await _initBalance();
+          await _fetchReports();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
-          children: [
-            _buildProfileHeader(),
-            const SizedBox(height: 24),
-            _buildWalletCard(),
-            const SizedBox(height: 24),
-            _buildBalanceCard(),
-          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileHeader(),
+              const SizedBox(height: 24),
+              _buildWalletCard(),
+              const SizedBox(height: 24),
+              _buildBalanceCard(),
+              const SizedBox(height: 24),
+              _buildReportsSection(),
+            ],
+          ),
         ),
       ),
     );
@@ -209,6 +234,134 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReportsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Your Reports',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.darkBlue,
+          ),
+        ),
+        const SizedBox(height: 16),
+        FutureBuilder<List<ReportData>>(
+          future: _reports,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  'Error: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
+
+            final reports = snapshot.data ?? [];
+            if (reports.isEmpty) {
+              return const Center(
+                child: Text('No reports submitted yet'),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: reports.length,
+              itemBuilder: (context, index) {
+                final report = reports[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: ListTile(
+                    title: Text(
+                      report.description,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        Text('Location: ${report.location}'),
+                        Text(
+                            'Status: ${report.verified ? "Verified" : "Pending"}'),
+                        if (report.verified)
+                          Text('Reward: ${report.reward} ETH'),
+                        Text(
+                            'Date: ${DateTime.fromMillisecondsSinceEpoch(report.timestamp * 1000)}'),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.open_in_new),
+                      onPressed: () => _showReportDetails(report),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  void _showReportDetails(ReportData report) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report Details'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('ID: ${report.id}'),
+              const SizedBox(height: 8),
+              Text('Description: ${report.description}'),
+              const SizedBox(height: 8),
+              Text('Location: ${report.location}'),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () {
+                  // TODO: Open IPFS link in browser
+                  final url = 'https://ipfs.io/ipfs/${report.evidenceLink}';
+                },
+                child: Text(
+                  'Evidence: ${report.evidenceLink}',
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('Status: ${report.verified ? "Verified" : "Pending"}'),
+              if (report.verified) ...[
+                const SizedBox(height: 8),
+                Text('Reward: ${report.reward} ETH'),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                'Date: ${DateTime.fromMillisecondsSinceEpoch(report.timestamp * 1000).toString()}',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

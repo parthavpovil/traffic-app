@@ -43,7 +43,61 @@ class ContractService {
     }
   }
 
+  Future<List<ReportData>> getReportsByAddress(Credentials credentials) async {
+    final function = _contract.function('getReportsByAddress');
+    final address = await credentials.extractAddress();
+
+    try {
+      final result = await _client.call(
+        contract: _contract,
+        function: function,
+        params: [address],
+      );
+
+      if (result.isEmpty) return [];
+
+      final reports = (result[0] as List<dynamic>).map((report) {
+        return ReportData(
+          id: (report[0] as BigInt).toInt(),
+          reporter: report[1].toString(),
+          description: report[2].toString(),
+          location: report[3].toString(),
+          evidenceLink: report[4].toString(),
+          verified: report[5] as bool,
+          reward: (report[6] as BigInt).toInt(),
+          timestamp: (report[7] as BigInt).toInt(),
+        );
+      }).toList();
+
+      return reports;
+    } catch (e) {
+      throw Exception('Failed to fetch reports: $e');
+    }
+  }
+
   void dispose() {
     _client.dispose();
   }
+}
+
+class ReportData {
+  final int id;
+  final String reporter;
+  final String description;
+  final String location;
+  final String evidenceLink;
+  final bool verified;
+  final int reward;
+  final int timestamp;
+
+  ReportData({
+    required this.id,
+    required this.reporter,
+    required this.description,
+    required this.location,
+    required this.evidenceLink,
+    required this.verified,
+    required this.reward,
+    required this.timestamp,
+  });
 }
