@@ -6,22 +6,37 @@ import '../services/wallet_service.dart';
 import '../widgets/dialogs/import_wallet_dialog.dart';
 import 'wallet_details_screen.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
-  Future<void> _handleWalletImport(BuildContext context) async {
-    final privateKey = await showDialog<String>(
-      context: context,
-      builder: (context) => const ImportWalletDialog(),
-    );
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
 
-    if (privateKey != null) {
+class _SplashScreenState extends State<SplashScreen> {
+  bool _isLoading = true;
+  bool _hasWallet = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Show splash screen for 2 seconds
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final walletService = WalletService(prefs);
+    final storedKey = await walletService.getStoredPrivateKey();
+
+    if (storedKey != null && mounted) {
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final walletService = WalletService(prefs);
-        final credentials = await walletService.importWallet(privateKey);
-
-        if (context.mounted) {
+        final credentials = await walletService.importWallet(storedKey);
+        if (mounted) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -33,7 +48,50 @@ class SplashScreen extends StatelessWidget {
           );
         }
       } catch (e) {
-        if (context.mounted) {
+        // If stored key is invalid, clear it
+        await prefs.remove('private_key');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _hasWallet = false;
+          });
+        }
+      }
+    } else if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _hasWallet = false;
+      });
+    }
+  }
+
+  Future<void> _handleWalletImport(BuildContext context) async {
+    final privateKey = await showDialog<String>(
+      context: context,
+      builder: (context) => const ImportWalletDialog(),
+    );
+
+    if (privateKey != null) {
+      try {
+        setState(() => _isLoading = true);
+        final prefs = await SharedPreferences.getInstance();
+        final walletService = WalletService(prefs);
+        final credentials = await walletService.importWallet(privateKey);
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WalletDetailsScreen(
+                credentials: credentials,
+                walletService: walletService,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: ${e.toString()}'),
@@ -93,25 +151,28 @@ class SplashScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 48),
-            ElevatedButton(
-              onPressed: () => _handleWalletImport(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.darkBlue,
-                foregroundColor: AppColors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+            if (_isLoading)
+              const CircularProgressIndicator()
+            else if (!_hasWallet)
+              ElevatedButton(
+                onPressed: () => _handleWalletImport(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.darkBlue,
+                  foregroundColor: AppColors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: const Text(
+                  'Import Wallet',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              child: const Text(
-                'Import Wallet',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           ],
         ),
       ),
