@@ -5,6 +5,8 @@ import '../services/wallet_service.dart';
 import '../services/contract_service.dart';
 import '../constants/contract_constants.dart';
 import 'package:web3dart/web3dart.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Credentials credentials;
@@ -315,6 +317,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showReportDetails(ReportData report) {
+    final ipfsUrl = 'https://ipfs.io/ipfs/${report.evidenceLink}';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -330,16 +334,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 8),
               Text('Location: ${report.location}'),
               const SizedBox(height: 8),
+              const Text('Evidence:'),
+              const SizedBox(height: 8),
               InkWell(
-                onTap: () {
-                  // TODO: Open IPFS link in browser
-                  final url = 'https://ipfs.io/ipfs/${report.evidenceLink}';
+                onTap: () async {
+                  if (await canLaunchUrl(Uri.parse(ipfsUrl))) {
+                    await launchUrl(Uri.parse(ipfsUrl));
+                  }
                 },
-                child: Text(
-                  'Evidence: ${report.evidenceLink}',
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
+                child: Container(
+                  constraints: const BoxConstraints(
+                    maxHeight: 200,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: ipfsUrl,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: (context, url, error) => const Center(
+                        child: Icon(Icons.error),
+                      ),
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
