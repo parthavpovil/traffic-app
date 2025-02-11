@@ -20,7 +20,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<EthereumAddress> _address;
-  late Future<EtherAmount> _balance;
+  Future<EtherAmount>? _balance;
 
   @override
   void initState() {
@@ -31,9 +31,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _initBalance() async {
     final address = await _address;
-    setState(() {
-      _balance = widget.walletService.getBalance(address.hex);
-    });
+    if (mounted) {
+      setState(() {
+        _balance = widget.walletService.getBalance(address.hex);
+      });
+    }
   }
 
   @override
