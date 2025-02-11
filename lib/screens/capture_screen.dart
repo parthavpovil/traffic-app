@@ -4,9 +4,19 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../constants/colors.dart';
+import '../services/ipfs_service.dart';
+import '../services/contract_service.dart';
+import 'package:web3dart/web3dart.dart';
 
 class CaptureScreen extends StatefulWidget {
-  const CaptureScreen({super.key});
+  final Credentials credentials;
+  final ContractService contractService;
+
+  const CaptureScreen({
+    super.key,
+    required this.credentials,
+    required this.contractService,
+  });
 
   @override
   State<CaptureScreen> createState() => _CaptureScreenState();
@@ -18,6 +28,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
   Position? _currentPosition;
   bool _isLoading = false;
   bool _isVideo = false;
+  final IpfsService _ipfsService = IpfsService(
+    apiKey: '2d0dd746877967b1db08',
+    apiSecret:
+        'efb8cd587b7259e42f37b36f05a5d02261f6d9f8292fcc7adf7fb553bff3b536',
+  );
+  String? _ipfsCid;
 
   @override
   void initState() {
@@ -63,6 +79,48 @@ class _CaptureScreenState extends State<CaptureScreen> {
           const SnackBar(content: Text('Error capturing media')),
         );
       }
+    }
+  }
+
+  Future<void> _submitReport() async {
+    if (_mediaFile == null || _currentPosition == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // First upload to IPFS
+      final cid = await _ipfsService.uploadFile(_mediaFile!);
+      setState(() => _ipfsCid = cid);
+
+      // Format location string
+      final location =
+          '${_currentPosition!.latitude},${_currentPosition!.longitude}';
+
+      // Submit to contract
+      await widget.contractService.submitReport(
+        credentials: widget.credentials,
+        description: _descriptionController.text,
+        location: location,
+        evidenceLink: cid,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Report submitted successfully!')),
+        );
+        Navigator.pop(context); // Return to previous screen
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -221,9 +279,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
             ElevatedButton(
               onPressed: _isLoading || _mediaFile == null
                   ? null
-                  : () {
-                      // TODO: Implement submission
-                    },
+                  : () => _submitReport(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.darkBlue,
                 foregroundColor: AppColors.white,

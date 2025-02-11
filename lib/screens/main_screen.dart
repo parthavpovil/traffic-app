@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:web3dart/web3dart.dart';
 import '../constants/colors.dart';
 import '../services/wallet_service.dart';
+import '../services/contract_service.dart';
+import '../constants/contract_constants.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'capture_screen.dart';
@@ -23,10 +25,16 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   late final List<Widget> _screens;
+  late final ContractService _contractService;
 
   @override
   void initState() {
     super.initState();
+    _contractService = ContractService(
+      rpcUrl: WalletService.sepoliaRpcUrl,
+      contractAddress: ContractConstants.contractAddress,
+      contractAbi: ContractConstants.abi,
+    );
     _screens = [
       const HomeScreen(),
       ProfileScreen(
@@ -45,7 +53,10 @@ class _MainScreenState extends State<MainScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CaptureScreen(),
+              builder: (context) => CaptureScreen(
+                credentials: widget.credentials,
+                contractService: _contractService,
+              ),
             ),
           );
         },
