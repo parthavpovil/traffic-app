@@ -4,7 +4,7 @@ import '../widgets/common/app_logo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/wallet_service.dart';
 import '../widgets/dialogs/import_wallet_dialog.dart';
-import 'wallet_details_screen.dart';
+import 'main_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -40,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => WalletDetailsScreen(
+              builder: (context) => MainScreen(
                 credentials: credentials,
                 walletService: walletService,
               ),
@@ -82,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => WalletDetailsScreen(
+              builder: (context) => MainScreen(
                 credentials: credentials,
                 walletService: walletService,
               ),

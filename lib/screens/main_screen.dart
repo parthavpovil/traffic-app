@@ -1,0 +1,100 @@
+import 'package:flutter/material.dart';
+import 'package:web3dart/web3dart.dart';
+import '../constants/colors.dart';
+import '../services/wallet_service.dart';
+import 'home_screen.dart';
+import 'profile_screen.dart';
+
+class MainScreen extends StatefulWidget {
+  final Credentials credentials;
+  final WalletService walletService;
+
+  const MainScreen({
+    super.key,
+    required this.credentials,
+    required this.walletService,
+  });
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  int _selectedIndex = 0;
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const HomeScreen(),
+      ProfileScreen(
+        credentials: widget.credentials,
+        walletService: widget.walletService,
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: Implement action
+        },
+        backgroundColor: AppColors.orange,
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+            ),
+          ],
+        ),
+        child: BottomAppBar(
+          height: 60,
+          padding: EdgeInsets.zero,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Expanded(child: _buildNavItem(0, Icons.home, 'Home')),
+              const Expanded(child: SizedBox()), // Space for FAB
+              Expanded(child: _buildNavItem(1, Icons.person, 'Profile')),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isSelected = _selectedIndex == index;
+    return MaterialButton(
+      onPressed: () => setState(() => _selectedIndex = index),
+      minWidth: 40,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? AppColors.darkBlue : Colors.grey,
+            size: 24,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? AppColors.darkBlue : Colors.grey,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
