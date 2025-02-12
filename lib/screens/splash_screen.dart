@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/wallet_service.dart';
 import '../widgets/dialogs/import_wallet_dialog.dart';
 import 'main_screen.dart';
+import '../utils/page_transitions.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -39,8 +40,8 @@ class _SplashScreenState extends State<SplashScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => MainScreen(
+            FadePageRoute(
+              page: MainScreen(
                 credentials: credentials,
                 walletService: walletService,
               ),
@@ -81,8 +82,8 @@ class _SplashScreenState extends State<SplashScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => MainScreen(
+            FadePageRoute(
+              page: MainScreen(
                 credentials: credentials,
                 walletService: walletService,
               ),

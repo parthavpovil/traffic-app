@@ -8,6 +8,8 @@ import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'capture_screen.dart';
 import '../constants/theme.dart';
+import '../utils/page_transitions.dart';
+import '../utils/custom_fab_location.dart';
 
 class MainScreen extends StatefulWidget {
   final Credentials credentials;
@@ -48,23 +50,43 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CaptureScreen(
-                credentials: widget.credentials,
-                contractService: _contractService,
-              ),
-            ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
           );
         },
-        backgroundColor: AppColors.orange,
-        child: const Icon(Icons.add),
+        child: _screens[_selectedIndex],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Builder(
+        builder: (context) => SizedBox(
+          width: 56,
+          height: 56,
+          child: FloatingActionButton(
+            onPressed: () {
+              final RenderBox fab = context.findRenderObject() as RenderBox;
+              final fabPosition = fab.localToGlobal(Offset.zero);
+
+              Navigator.push(
+                context,
+                FabSlideRoute(
+                  page: CaptureScreen(
+                    credentials: widget.credentials,
+                    contractService: _contractService,
+                  ),
+                  startOffset: fabPosition,
+                ),
+              );
+            },
+            backgroundColor: AppColors.orange,
+            elevation: 4,
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: CustomFabLocation(),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           boxShadow: [
@@ -75,13 +97,15 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         child: BottomAppBar(
-          height: 60,
-          padding: EdgeInsets.zero,
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          notchMargin: 8,
+          shape: const CircularNotchedRectangle(),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Expanded(child: _buildNavItem(0, Icons.home, 'Home')),
-              const Expanded(child: SizedBox()), // Space for FAB
+              const SizedBox(width: 40),
               Expanded(child: _buildNavItem(1, Icons.person, 'Profile')),
             ],
           ),
@@ -92,26 +116,34 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _selectedIndex == index;
-    return MaterialButton(
-      onPressed: () => setState(() => _selectedIndex = index),
-      minWidth: 40,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppColors.darkBlue : Colors.grey,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? AppColors.darkBlue : Colors.grey,
-              fontSize: 12,
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: isSelected ? AppColors.orange : AppColors.darkBlue,
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isSelected ? AppColors.orange : AppColors.darkBlue,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }

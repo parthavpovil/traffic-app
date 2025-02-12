@@ -7,7 +7,9 @@ import '../constants/contract_constants.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:async';
+import '../utils/page_transitions.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Credentials credentials;
@@ -400,9 +402,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Date: ${DateTime.fromMillisecondsSinceEpoch(report.timestamp * 1000)}'),
                     ],
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.open_in_new),
-                    onPressed: () => _showReportDetails(report),
+                  trailing: Builder(
+                    builder: (context) => IconButton(
+                      icon: const Icon(Icons.open_in_new),
+                      onPressed: () => _showReportDetails(report, context),
+                    ),
                   ),
                 ),
               );
@@ -412,70 +416,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showReportDetails(ReportData report) {
-    final ipfsUrl = 'https://ipfs.io/ipfs/${report.evidenceLink}';
+  void _showReportDetails(ReportData report, BuildContext context) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final Offset buttonPosition = button.localToGlobal(Offset.zero);
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report Details'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('ID: ${report.id}'),
-              const SizedBox(height: 8),
-              Text('Description: ${report.description}'),
-              const SizedBox(height: 8),
-              Text('Location: ${report.location}'),
-              const SizedBox(height: 8),
-              const Text('Evidence:'),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () async {
-                  if (await canLaunchUrl(Uri.parse(ipfsUrl))) {
-                    await launchUrl(Uri.parse(ipfsUrl));
-                  }
-                },
-                child: Container(
-                  constraints: const BoxConstraints(
-                    maxHeight: 200,
+    Navigator.of(context).push(
+      ButtonSlideRoute(
+        startOffset: buttonPosition,
+        page: Dialog(
+          backgroundColor: Colors.white,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Report Details',
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: ipfsUrl,
-                      placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text('ID: ${report.id}'),
+                  const SizedBox(height: 8),
+                  Text('Description: ${report.description}'),
+                  const SizedBox(height: 8),
+                  Text('Location: ${report.location}'),
+                  const SizedBox(height: 8),
+                  const Text('Evidence:'),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () async {
+                      final ipfsUrl =
+                          'https://ipfs.io/ipfs/${report.evidenceLink}';
+                      if (await canLaunchUrl(Uri.parse(ipfsUrl))) {
+                        await launchUrl(Uri.parse(ipfsUrl));
+                      }
+                    },
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        maxHeight: 200,
                       ),
-                      errorWidget: (context, url, error) => const Center(
-                        child: Icon(Icons.error),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: CachedNetworkImage(
+                          imageUrl:
+                              'https://ipfs.io/ipfs/${report.evidenceLink}',
+                          placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                          errorWidget: (context, url, error) => const Center(
+                            child: Icon(Icons.error),
+                          ),
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                      fit: BoxFit.contain,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Text('Status: ${report.verified ? "Verified" : "Pending"}'),
+                  if (report.verified) ...[
+                    const SizedBox(height: 8),
+                    Text('Reward: ${report.reward} ETH'),
+                  ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Date: ${DateTime.fromMillisecondsSinceEpoch(report.timestamp * 1000).toString()}',
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text('Status: ${report.verified ? "Verified" : "Pending"}'),
-              if (report.verified) ...[
-                const SizedBox(height: 8),
-                Text('Reward: ${report.reward} ETH'),
-              ],
-              const SizedBox(height: 8),
-              Text(
-                'Date: ${DateTime.fromMillisecondsSinceEpoch(report.timestamp * 1000).toString()}',
-              ),
-            ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
   }
