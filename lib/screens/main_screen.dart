@@ -7,6 +7,7 @@ import '../constants/contract_constants.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'capture_screen.dart';
+import '../constants/theme.dart';
 
 class MainScreen extends StatefulWidget {
   final Credentials credentials;

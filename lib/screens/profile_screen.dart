@@ -7,6 +7,7 @@ import '../constants/contract_constants.dart';
 import 'package:web3dart/web3dart.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async';
 
 class ProfileScreen extends StatefulWidget {
   final Credentials credentials;
@@ -26,7 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late Future<EthereumAddress> _address;
   Future<EtherAmount>? _balance;
   late final ContractService _contractService;
-  Future<List<ReportData>>? _reports;
+  List<ReportData>? _currentReports;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -39,12 +41,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
       contractAbi: ContractConstants.abi,
     );
     _fetchReports();
+
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (mounted) {
+        final newReports =
+            await _contractService.getReportsByAddress(widget.credentials);
+        if (!_areReportsEqual(_currentReports ?? [], newReports)) {
+          setState(() {
+            _currentReports = newReports;
+          });
+        }
+      }
+    });
+  }
+
+  bool _areReportsEqual(List<ReportData> current, List<ReportData> newReports) {
+    if (current.length != newReports.length) return false;
+    for (int i = 0; i < current.length; i++) {
+      if (current[i].id != newReports[i].id ||
+          current[i].verified != newReports[i].verified ||
+          current[i].reward != newReports[i].reward) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> _fetchReports() async {
-    setState(() {
-      _reports = _contractService.getReportsByAddress(widget.credentials);
-    });
+    final reports =
+        await _contractService.getReportsByAddress(widget.credentials);
+    if (mounted) {
+      setState(() {
+        _currentReports = reports;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _initBalance() async {
@@ -228,45 +264,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Total Reports',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.darkBlue,
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.darkBlue,
+                  ),
             ),
-            FutureBuilder<List<ReportData>>(
-              future: _reports,
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${snapshot.data!.length}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+            if (_currentReports == null)
+              const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+                ),
+              )
+            else
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_currentReports!.length}',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: AppColors.orange,
                       ),
-                    ),
-                  );
-                }
-                return const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
-                  ),
-                );
-              },
-            ),
+                ),
+              ),
           ],
         ),
       ),
@@ -343,65 +370,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        FutureBuilder<List<ReportData>>(
-          future: _reports,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  'Error: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
+        if (_currentReports == null)
+          const Center(child: CircularProgressIndicator())
+        else if (_currentReports!.isEmpty)
+          const Center(child: Text('No reports submitted yet'))
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _currentReports!.length,
+            itemBuilder: (context, index) {
+              final report = _currentReports![index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: ListTile(
+                  title: Text(
+                    report.description,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+                      Text('Location: ${report.location}'),
+                      Text(
+                          'Status: ${report.verified ? "Verified" : "Pending"}'),
+                      if (report.verified) Text('Reward: ${report.reward} ETH'),
+                      Text(
+                          'Date: ${DateTime.fromMillisecondsSinceEpoch(report.timestamp * 1000)}'),
+                    ],
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.open_in_new),
+                    onPressed: () => _showReportDetails(report),
+                  ),
                 ),
               );
-            }
-
-            final reports = snapshot.data ?? [];
-            if (reports.isEmpty) {
-              return const Center(
-                child: Text('No reports submitted yet'),
-              );
-            }
-
-            return ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: reports.length,
-              itemBuilder: (context, index) {
-                final report = reports[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: ListTile(
-                    title: Text(
-                      report.description,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        Text('Location: ${report.location}'),
-                        Text(
-                            'Status: ${report.verified ? "Verified" : "Pending"}'),
-                        if (report.verified)
-                          Text('Reward: ${report.reward} ETH'),
-                        Text(
-                            'Date: ${DateTime.fromMillisecondsSinceEpoch(report.timestamp * 1000)}'),
-                      ],
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.open_in_new),
-                      onPressed: () => _showReportDetails(report),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
+            },
+          ),
       ],
     );
   }
