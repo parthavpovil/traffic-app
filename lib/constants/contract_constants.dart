@@ -65,6 +65,11 @@ class ContractConstants {
 				"internalType": "string",
 				"name": "_evidenceLink",
 				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "_visibility",
+				"type": "bool"
 			}
 		],
 		"name": "submitReport",
@@ -177,6 +182,71 @@ class ContractConstants {
 						"internalType": "uint256",
 						"name": "timestamp",
 						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "visibility",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct ReportAndReward.ReportData[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getVisibleReports",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "id",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "reporter",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "description",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "location",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "evidenceLink",
+						"type": "string"
+					},
+					{
+						"internalType": "bool",
+						"name": "verified",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "reward",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "visibility",
+						"type": "bool"
 					}
 				],
 				"internalType": "struct ReportAndReward.ReportData[]",
@@ -262,6 +332,11 @@ class ContractConstants {
 				"internalType": "uint256",
 				"name": "timestamp",
 				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "visibility",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -270,5 +345,5 @@ class ContractConstants {
 ]''';
 
   static const String contractAddress =
-      '0xce2fdfa1fc414b49c66cd7b145514e9dbb2f5626';
+      '0x74ee561eF4bf9f55E3E4aB4e14D5C4eBAfee8Ba6';
 }

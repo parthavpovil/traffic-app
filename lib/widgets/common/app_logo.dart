@@ -5,7 +5,7 @@ class AppLogo extends StatelessWidget {
 
   const AppLogo({
     super.key,
-    this.size = 240,
+    this.size = 180,
   });
 
   @override
@@ -14,7 +14,7 @@ class AppLogo extends StatelessWidget {
       'assets/images/Traffix.png',
       width: size,
       height: size,
-      fit: BoxFit.contain,
+      fit: BoxFit.cover,
       filterQuality: FilterQuality.high,
     );
   }

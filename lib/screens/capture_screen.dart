@@ -7,6 +7,7 @@ import '../constants/colors.dart';
 import '../services/ipfs_service.dart';
 import '../services/contract_service.dart';
 import 'package:web3dart/web3dart.dart';
+import 'package:lottie/lottie.dart';
 
 class CaptureScreen extends StatefulWidget {
   final Credentials credentials;
@@ -28,6 +29,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   Position? _currentPosition;
   bool _isLoading = false;
   bool _isVideo = false;
+  bool _isVisible = true;
   final IpfsService _ipfsService = IpfsService(
     apiKey: '2d0dd746877967b1db08',
     apiSecret:
@@ -102,10 +104,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
         description: _descriptionController.text,
         location: location,
         evidenceLink: cid,
+        visibility: _isVisible,
       );
 
       if (mounted) {
-        // Show success dialog
         await showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -289,6 +291,22 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 ),
               ),
             ],
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Make Report Public'),
+              subtitle: const Text(
+                'Allow others to see this report in the public feed',
+                style: TextStyle(fontSize: 12),
+              ),
+              value: _isVisible,
+              onChanged: (bool value) {
+                setState(() {
+                  _isVisible = value;
+                });
+              },
+              activeColor: AppColors.orange,
+              contentPadding: EdgeInsets.zero,
+            ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _isLoading || _mediaFile == null

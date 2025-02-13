@@ -22,6 +22,7 @@ class ContractService {
     required String description,
     required String location,
     required String evidenceLink,
+    required bool visibility,
   }) async {
     final function = _contract.function('submitReport');
 
@@ -31,7 +32,7 @@ class ContractService {
         Transaction.callContract(
           contract: _contract,
           function: function,
-          parameters: [description, location, evidenceLink],
+          parameters: [description, location, evidenceLink, visibility],
           maxGas: 500000, // Fixed gas limit
         ),
         chainId: 11155111, // Sepolia chain ID
@@ -66,12 +67,45 @@ class ContractService {
           verified: report[5] as bool,
           reward: (report[6] as BigInt).toInt(),
           timestamp: (report[7] as BigInt).toInt(),
+          visibility: report[8] as bool,
         );
       }).toList();
 
       return reports;
     } catch (e) {
       throw Exception('Failed to fetch reports: $e');
+    }
+  }
+
+  Future<List<ReportData>> getVisibleReports() async {
+    final function = _contract.function('getVisibleReports');
+
+    try {
+      final result = await _client.call(
+        contract: _contract,
+        function: function,
+        params: [],
+      );
+
+      if (result.isEmpty) return [];
+
+      final reports = (result[0] as List<dynamic>).map((report) {
+        return ReportData(
+          id: (report[0] as BigInt).toInt(),
+          reporter: report[1].toString(),
+          description: report[2].toString(),
+          location: report[3].toString(),
+          evidenceLink: report[4].toString(),
+          verified: report[5] as bool,
+          reward: (report[6] as BigInt).toInt(),
+          timestamp: (report[7] as BigInt).toInt(),
+          visibility: report[8] as bool,
+        );
+      }).toList();
+
+      return reports;
+    } catch (e) {
+      throw Exception('Failed to fetch visible reports: $e');
     }
   }
 
@@ -89,6 +123,7 @@ class ReportData {
   final bool verified;
   final int reward;
   final int timestamp;
+  final bool visibility;
 
   ReportData({
     required this.id,
@@ -99,5 +134,6 @@ class ReportData {
     required this.verified,
     required this.reward,
     required this.timestamp,
+    required this.visibility,
   });
 }
