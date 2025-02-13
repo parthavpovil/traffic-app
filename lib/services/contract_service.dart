@@ -109,6 +109,20 @@ class ContractService {
     }
   }
 
+  Future<int> getReportCount() async {
+    final function = _contract.function('reportCount');
+    try {
+      final result = await _client.call(
+        contract: _contract,
+        function: function,
+        params: [],
+      );
+      return (result[0] as BigInt).toInt();
+    } catch (e) {
+      throw Exception('Failed to fetch report count: $e');
+    }
+  }
+
   void dispose() {
     _client.dispose();
   }

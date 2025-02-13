@@ -5,6 +5,7 @@ import '../services/contract_service.dart';
 import '../constants/contract_constants.dart';
 import '../services/wallet_service.dart';
 import '../widgets/report_details_dialog.dart';
+import '../widgets/reports_heat_map.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final ContractService _contractService;
   List<ReportData>? _visibleReports;
+  int _totalReports = 0;
 
   @override
   void initState() {
@@ -26,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
       contractAbi: ContractConstants.abi,
     );
     _fetchVisibleReports();
+    _fetchReportCount();
   }
 
   Future<void> _fetchVisibleReports() async {
@@ -40,6 +43,23 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error fetching reports: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _fetchReportCount() async {
+    try {
+      final count = await _contractService.getReportCount();
+      if (mounted) {
+        setState(() {
+          _totalReports = count;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching report count: $e')),
         );
       }
     }
@@ -71,16 +91,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: _StatCard(
                         title: 'Total Reports',
-                        value: '156',
+                        value: _totalReports.toString(),
                         icon: Icons.description,
                         color: AppColors.darkBlue,
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(
+                    const Expanded(
                       child: _StatCard(
                         title: 'Verified',
-                        value: '89',
+                        value: '0',
                         icon: Icons.verified,
                         color: AppColors.orange,
                       ),
@@ -110,15 +130,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                 ),
                 const SizedBox(height: 16),
-                Container(
+                SizedBox(
                   height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: AppColors.lightGray,
-                  ),
-                  child: const Center(
-                    child: Text('Map View Coming Soon'),
-                  ),
+                  child: _visibleReports == null
+                      ? const Center(child: CircularProgressIndicator())
+                      : _visibleReports!.isEmpty
+                          ? const Center(child: Text('No reports available'))
+                          : ReportsHeatMap(reports: _visibleReports!),
                 ),
               ],
             ),
