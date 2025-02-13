@@ -4,6 +4,7 @@ import '../constants/colors.dart';
 import '../services/contract_service.dart';
 import '../constants/contract_constants.dart';
 import '../services/wallet_service.dart';
+import '../widgets/report_details_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -199,6 +200,12 @@ class _RecentReportsList extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => ReportDetailsDialog(report: report),
+              );
+            },
             leading: Container(
               width: 48,
               height: 48,
