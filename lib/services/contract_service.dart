@@ -123,6 +123,31 @@ class ContractService {
     }
   }
 
+  Future<double> estimateReportGasFee({
+    required Credentials credentials,
+    required String description,
+    required String location,
+    required String evidenceLink,
+    required bool visibility,
+  }) async {
+    final function = _contract.function('submitReport');
+    try {
+      final gasEstimate = await _client.estimateGas(
+        sender: await credentials.extractAddress(),
+        to: EthereumAddress.fromHex(_contractAddress),
+        data: function
+            .encodeCall([description, location, evidenceLink, visibility]),
+      );
+
+      final gasPrice = await _client.getGasPrice();
+      final gasCost = gasEstimate * gasPrice.getInWei;
+      return EtherAmount.fromBigInt(EtherUnit.wei, gasCost)
+          .getValueInUnit(EtherUnit.ether);
+    } catch (e) {
+      throw Exception('Failed to estimate gas: $e');
+    }
+  }
+
   void dispose() {
     _client.dispose();
   }

@@ -344,6 +344,5 @@ class ContractConstants {
 	}
 ]''';
 
-  static const String contractAddress =
-      '0x74ee561eF4bf9f55E3E4aB4e14D5C4eBAfee8Ba6';
+  static const String contractAddress = '0xa5Cf9FfCfCEd2A711c77041C86F670560ab65081';
 }

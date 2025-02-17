@@ -24,7 +24,7 @@ class CaptureScreen extends StatefulWidget {
 }
 
 class _CaptureScreenState extends State<CaptureScreen> {
-  final _descriptionController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   File? _mediaFile;
   Position? _currentPosition;
   bool _isLoading = false;
@@ -56,7 +56,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
       setState(() => _currentPosition = position);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error getting location')),
+        SnackBar(
+          content: Text('Error getting location'),
+        ),
       );
     }
   }
@@ -87,16 +89,73 @@ class _CaptureScreenState extends State<CaptureScreen> {
   Future<void> _submitReport() async {
     if (_mediaFile == null || _currentPosition == null) return;
 
-    setState(() => _isLoading = true);
-
     try {
       // First upload to IPFS
+      setState(() => _isLoading = true);
       final cid = await _ipfsService.uploadFile(_mediaFile!);
       setState(() => _ipfsCid = cid);
 
       // Format location string
       final location =
           '${_currentPosition!.latitude},${_currentPosition!.longitude}';
+
+      // Estimate gas fee
+      final estimatedGas = await widget.contractService.estimateReportGasFee(
+        credentials: widget.credentials,
+        description: _descriptionController.text,
+        location: location,
+        evidenceLink: cid,
+        visibility: _isVisible,
+      );
+
+      if (!mounted) return;
+
+      // Show confirmation dialog with gas estimate
+      final shouldProceed = await showDialog<bool>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Confirm Submission'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Are you sure you want to submit this report?',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Estimated Gas Fee: ${estimatedGas.toStringAsFixed(8)} ETH',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Proceed'),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          false;
+
+      if (!shouldProceed) {
+        setState(() => _isLoading = false);
+        return;
+      }
 
       // Submit to contract
       await widget.contractService.submitReport(
@@ -117,8 +176,8 @@ class _CaptureScreenState extends State<CaptureScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pop(context); // Return to previous screen
+                  Navigator.pop(context);
+                  Navigator.pop(context);
                 },
                 child: const Text('OK'),
               ),
@@ -129,14 +188,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e')),
         );
+        setState(() => _isLoading = false);
       }
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -144,7 +199,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Report Traffic Issue'),
+        title: Text('Report Traffic Issue'),
         backgroundColor: AppColors.darkBlue,
         foregroundColor: AppColors.white,
       ),
@@ -327,14 +382,14 @@ class _CaptureScreenState extends State<CaptureScreen> {
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.white,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : const Text(
                       'Submit Report',
                       style: TextStyle(
+                        color: Colors.white,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
             ),

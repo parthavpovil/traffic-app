@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
-import '../widgets/common/app_logo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/wallet_service.dart';
 import '../widgets/dialogs/import_wallet_dialog.dart';
@@ -14,18 +13,35 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   bool _hasWallet = false;
+  late AnimationController _controller;
+  late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+    _controller.forward();
     _initializeApp();
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> _initializeApp() async {
-    // Show splash screen for 2 seconds
+    // First, let the animation and splash screen show for 2 seconds
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
@@ -37,6 +53,9 @@ class _SplashScreenState extends State<SplashScreen> {
     if (storedKey != null && mounted) {
       try {
         final credentials = await walletService.importWallet(storedKey);
+        // Add another small delay to ensure animation completes
+        await Future.delayed(const Duration(milliseconds: 500));
+        
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -49,7 +68,6 @@ class _SplashScreenState extends State<SplashScreen> {
           );
         }
       } catch (e) {
-        // If stored key is invalid, clear it
         await prefs.remove('private_key');
         if (mounted) {
           setState(() {
@@ -107,74 +125,59 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightGray,
+      backgroundColor: AppColors.white,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const AppLogo(),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'TRAFFI',
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.darkBlue,
-                    letterSpacing: 2,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.1),
-                        offset: const Offset(0, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  'X',
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.orange,
-                    letterSpacing: 2,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.1),
-                        offset: const Offset(0, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 48),
-            if (_isLoading)
-              const CircularProgressIndicator()
-            else if (!_hasWallet)
-              ElevatedButton(
-                onPressed: () => _handleWalletImport(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.darkBlue,
-                  foregroundColor: AppColors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: const Text(
-                  'Import Wallet',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+        child: FadeTransition(
+          opacity: _animation,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/traffic.gif',
+                width: 200,
+                height: 200,
+                fit: BoxFit.contain,
               ),
-          ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'TRAFFI',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.darkBlue,
+                      letterSpacing: 2,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.1),
+                          offset: const Offset(0, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'X',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFE74425), // Specific red color
+                      letterSpacing: 2,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.1),
+                          offset: const Offset(0, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
