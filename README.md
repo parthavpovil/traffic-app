@@ -1,6 +1,6 @@
 <div align="center">
   <h1>TRAFFIX</h1>
-  <img src="assets/images/traffic-logo.png" width="120" height="120" alt="Traffix Logo"/>
+  <img src="assets/traffic-logo.png" width="120" height="120" alt="Traffix Logo"/>
   <p><em>Decentralized Traffic Violation Reporting System</em></p>
 </div>
 
