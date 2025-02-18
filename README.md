@@ -94,9 +94,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter)
+Parthav - [@parthav_](https://twitter.com/yourtwitter)
 
-Project Link: [https://github.com/yourusername/traffix](https://github.com/yourusername/traffix)
+Project Link: [https://github.com/parthavpovil/traffic-app](https://github.com/yourusername/traffix)
 
 ## Acknowledgments
 
