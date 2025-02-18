@@ -10,6 +10,29 @@
 
 Traffix is a blockchain-powered mobile application built with Flutter that revolutionizes traffic violation reporting. It provides a secure, transparent platform for citizens to report violations and earn rewards for verified reports.
 
+## 📱 Screenshots
+
+<div align="center">
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+    <img src="screenshots/splash_screen.jpg" width="200" alt="Splash Screen"/>
+    <img src="screenshots/home_screen.jpg" width="200" alt="Home Screen"/>
+    <img src="screenshots/capture_screen.jpg" width="200" alt="Capture Screen"/>
+    <img src="screenshots/report_details.jpg" width="200" alt="Report Details"/>
+  </div>
+</div>
+
+<details>
+<summary>More Screenshots</summary>
+
+<div align="center">
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px;">
+    <img src="screenshots/profile_screen.jpg" width="200" alt="Profile Screen"/>
+    <img src="screenshots/gas-fee.jpg" width="200" alt="Gas Fee Estimation"/>
+  </div>
+</div>
+
+</details>
+
 ## ✨ Key Features
 
 🔐 **Secure Authentication**
@@ -102,9 +125,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Parthav - [@parthav_](https://twitter.com/yourtwitter)
+Parthav - [@parthav_](https://x.com/parthav_?t=-W93Pb43jl8kgoI6Lkf9YA&s=08)
 
-Project Link: [https://github.com/parthavpovil/traffic-app](https://github.com/yourusername/traffix)
+Project Link: [https://github.com/parthavpovil/traffic-app](https://github.com/parthavpovil/traffic-app)
 
 ## Acknowledgments
 
