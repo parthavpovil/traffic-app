@@ -31,7 +31,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       curve: Curves.easeIn,
     );
     _controller.forward();
-    _initializeApp();
+    
+    // Add this to check wallet and navigate
+    _checkWalletAndNavigate();
   }
 
   @override
@@ -40,23 +42,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  Future<void> _initializeApp() async {
-    // First, let the animation and splash screen show for 2 seconds
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    final walletService = WalletService(prefs);
-    final storedKey = await walletService.getStoredPrivateKey();
-
-    if (storedKey != null && mounted) {
-      try {
-        final credentials = await walletService.importWallet(storedKey);
-        // Add another small delay to ensure animation completes
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        if (mounted) {
+  Future<void> _checkWalletAndNavigate() async {
+    try {
+      print('Checking wallet status...');
+      final prefs = await SharedPreferences.getInstance();
+      final walletService = WalletService(prefs);
+      final privateKey = await walletService.getStoredPrivateKey();
+      
+      await Future.delayed(const Duration(seconds: 2));
+      
+      if (mounted) {
+        if (privateKey != null) {
+          final credentials = await walletService.importWallet(privateKey);
           Navigator.pushReplacement(
             context,
             FadePageRoute(
@@ -66,60 +63,72 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
             ),
           );
-        }
-      } catch (e) {
-        await prefs.remove('private_key');
-        if (mounted) {
+        } else {
           setState(() {
-            _isLoading = false;
             _hasWallet = false;
+            _isLoading = false;
           });
+          _showImportWalletDialog();
         }
       }
-    } else if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _hasWallet = false;
-      });
+    } catch (e) {
+      print('Error in _checkWalletAndNavigate: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to initialize: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
-  Future<void> _handleWalletImport(BuildContext context) async {
-    final privateKey = await showDialog<String>(
+  void _showImportWalletDialog() {
+    showDialog(
       context: context,
-      builder: (context) => const ImportWalletDialog(),
+      barrierDismissible: false,
+      builder: (context) => ImportWalletDialog(
+        onImport: (privateKey) async {
+          try {
+            setState(() => _isLoading = true);
+            final prefs = await SharedPreferences.getInstance();
+            final walletService = WalletService(prefs);
+            final credentials = await walletService.importWallet(privateKey);
+            
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                FadePageRoute(
+                  page: MainScreen(
+                    credentials: credentials,
+                    walletService: walletService,
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            setState(() => _isLoading = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+      ),
     );
-
-    if (privateKey != null) {
-      try {
-        setState(() => _isLoading = true);
-        final prefs = await SharedPreferences.getInstance();
-        final walletService = WalletService(prefs);
-        final credentials = await walletService.importWallet(privateKey);
-
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            FadePageRoute(
-              page: MainScreen(
-                credentials: credentials,
-                walletService: walletService,
-              ),
-            ),
-          );
-        }
-      } catch (e) {
-        setState(() => _isLoading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${e.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
   }
 
   @override

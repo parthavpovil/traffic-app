@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import '../../constants/colors.dart';
 
 class ImportWalletDialog extends StatefulWidget {
-  const ImportWalletDialog({super.key});
+  final Function(String) onImport;
+
+  const ImportWalletDialog({
+    super.key,
+    required this.onImport,
+  });
 
   @override
   State<ImportWalletDialog> createState() => _ImportWalletDialogState();
@@ -47,7 +52,8 @@ class _ImportWalletDialogState extends State<ImportWalletDialog> {
           onPressed: () {
             final privateKey = _privateKeyController.text.trim();
             if (privateKey.length == 64 || privateKey.length == 66) {
-              Navigator.pop(context, privateKey);
+              widget.onImport(privateKey);
+              Navigator.pop(context);
             } else {
               setState(() => _isPrivateKeyValid = false);
             }

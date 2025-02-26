@@ -6,6 +6,7 @@ import '../constants/contract_constants.dart';
 import '../services/wallet_service.dart';
 import '../widgets/report_details_dialog.dart';
 import '../widgets/reports_heat_map.dart';
+import '../utils/network_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,6 +51,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchReportCount() async {
     try {
+      if (!await NetworkUtils.hasInternetConnection()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No internet connection. Please check your connection and try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       final count = await _contractService.getReportCount();
       if (mounted) {
         setState(() {
@@ -59,7 +72,11 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching report count: $e')),
+          SnackBar(
+            content: Text('Error fetching report count: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     }

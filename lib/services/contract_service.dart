@@ -87,38 +87,71 @@ class ContractService {
         params: [],
       );
 
+      // Debug log
+      print('Visible reports raw result: $result');
+
       if (result.isEmpty) return [];
 
       final reports = (result[0] as List<dynamic>).map((report) {
-        return ReportData(
-          id: (report[0] as BigInt).toInt(),
-          reporter: report[1].toString(),
-          description: report[2].toString(),
-          location: report[3].toString(),
-          evidenceLink: report[4].toString(),
-          verified: report[5] as bool,
-          reward: (report[6] as BigInt).toInt(),
-          timestamp: (report[7] as BigInt).toInt(),
-          visibility: report[8] as bool,
-        );
-      }).toList();
+        if (report is! List) {
+          print('Invalid report format: $report');
+          return null;
+        }
+        
+        try {
+          return ReportData(
+            id: (report[0] as BigInt).toInt(),
+            reporter: report[1].toString(),
+            description: report[2].toString(),
+            location: report[3].toString(),
+            evidenceLink: report[4].toString(),
+            verified: report[5] as bool,
+            reward: (report[6] as BigInt).toInt(),
+            timestamp: (report[7] as BigInt).toInt(),
+            visibility: report[8] as bool,
+          );
+        } catch (e) {
+          print('Error parsing report: $e');
+          return null;
+        }
+      }).whereType<ReportData>().toList();
 
       return reports;
     } catch (e) {
+      print('Error in getVisibleReports: $e');
       throw Exception('Failed to fetch visible reports: $e');
     }
   }
 
   Future<int> getReportCount() async {
-    final function = _contract.function('reportCount');
     try {
+      print('Calling reportCount...');
+      
       final result = await _client.call(
         contract: _contract,
-        function: function,
+        function: _contract.function('reportCount'),
         params: [],
       );
-      return (result[0] as BigInt).toInt();
+      
+      print('Report count raw result: $result');
+      
+      if (result.isEmpty) {
+        print('Empty result from contract');
+        return 0;
+      }
+      
+      if (result[0] is BigInt) {
+        return (result[0] as BigInt).toInt();
+      } else {
+        print('Unexpected return type: ${result[0].runtimeType}');
+        return 0;
+      }
     } catch (e) {
+      print('Error in getReportCount: $e');
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('Failed host lookup')) {
+        throw Exception('No internet connection. Please check your connection and try again.');
+      }
       throw Exception('Failed to fetch report count: $e');
     }
   }

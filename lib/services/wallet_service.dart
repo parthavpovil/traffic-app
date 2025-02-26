@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 class WalletService {
   static const String _privateKeyKey = 'private_key';
   static const String sepoliaRpcUrl =
-      'https://sepolia.infura.io/v3/75e1ccf8e39e4f67b34e691671471204';
+      'https://sepolia.infura.io/v3/8daf643dc55444bc8a73d8b854318094';
 
   final Web3Client _client = Web3Client(sepoliaRpcUrl, http.Client());
   final SharedPreferences _prefs;
